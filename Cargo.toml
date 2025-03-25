@@ -1,0 +1,40 @@
+[package]
+authors = ["Michael Lodder <redmike7@gmail.com>"]
+categories = [
+    "cryptography",
+    "authentication",
+    "no-std",
+    "algorithms",
+]
+description = "BLS signature implementation according to the IETF spec on the BN254 curve."
+documentation = "https://docs.rs/bls-bn254"
+edition = "2021"
+homepage = "https://github.com/mikelodder7/bls-bn254"
+keywords = ["crypto", "signature", "signing", "bls", "bn254"]
+license = "MIT OR Apache-2.0"
+name = "bls-bn254"
+readme = "README.md"
+repository = "https://github.com/mikelodder7/bls-bn254"
+version = "0.1.0"
+
+[features]
+alloc = ["crypto-bigint/alloc", "elliptic-curve/alloc", "serde/alloc", "serdect/alloc", "elliptic-curve-tools"]
+std = ["alloc", "crypto-bigint/default", "serde/std", "elliptic-curve-tools"]
+
+[dependencies]
+crypto-bigint = { version = "0.5.5", features = ["generic-array"] }
+core2 = "0.4"
+elliptic-curve = { version = "0.13", features = ["arithmetic", "bits", "hash2curve", "hazmat", "sec1"], default-features = false }
+elliptic-curve-tools = { version = "0.1.2", optional = true }
+hex = "0.4"
+pairing = { version = "0.23", default-features = false }
+rand = "0.8"
+rand_core = "0.6"
+serde = { version = "1.0", features = ["derive"], default-features = false }
+serdect = { version = "0.3", default-features = false }
+sha2 = "0.10"
+subtle = "2.6"
+zeroize = { version = "1", default-features = false }
+
+[dev-dependencies]
+rand_chacha = "0.3"
