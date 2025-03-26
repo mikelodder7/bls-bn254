@@ -940,7 +940,7 @@ mod tests {
         let x: [u8; 32] = g.x().into();
         let y = g.y_is_odd();
         let mut expected_x = [0u8; 32];
-        expected_x[0] = 1;
+        expected_x[31] = 1;
 
         assert_eq!(x, expected_x);
         assert_eq!(y.unwrap_u8(), 0);

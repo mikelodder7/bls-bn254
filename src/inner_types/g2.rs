@@ -940,8 +940,6 @@ impl G2Projective {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::inner_types::G1Projective;
-    use elliptic_curve::hash2curve::MapToCurve;
 
     #[cfg(any(feature = "alloc", feature = "std"))]
     #[test]
@@ -968,10 +966,11 @@ mod tests {
         let x: [u8; G2Affine::COMPRESSED_BYTES] = g.x().into();
         let y = g.y_is_odd();
         let mut expected_x = [0u8; G2Affine::COMPRESSED_BYTES];
-        hex::decode_to_slice("198e9393920d483a7260bfb731fb5db6466f6dcb02d4981f3e185a6f1b1cae1b1800deef121f1e7645fb98b23b47b6672f5e9c77e3b6d2c0c6a47013149d46c2", &mut expected_x).unwrap();
+        expected_x[..Fp::BYTES].copy_from_slice(&Fp2::GEN_X.c1.0.to_be_bytes()[..]);
+        expected_x[Fp::BYTES..].copy_from_slice(&Fp2::GEN_X.c0.0.to_be_bytes()[..]);
 
         assert_eq!(x, expected_x);
-        assert_eq!(y.unwrap_u8(), 1);
+        assert_eq!(y.unwrap_u8(), 0);
     }
 
     #[test]
@@ -1029,60 +1028,182 @@ mod tests {
 
         let encode_vectors: [TestVector; 5] = [
             TestVector {
-                msg: b"",
+                msg: b"abc",
                 p: G2Affine {
-                    x: Fp2::ZERO,
-                    y: Fp2::ONE,
+                    x: Fp2 {
+                        c0: Fp::from_words([
+                            0xe1812e0bcea5afd8,
+                            0xc247856d6de4e420,
+                            0x35ecb67d5284dc27,
+                            0x101e2f3d9fa22cb4,
+                        ]),
+                        c1: Fp::from_words([
+                            0xb17236325be3b6b7,
+                            0x0c82d443fd953481,
+                            0x1599274bf9e80505,
+                            0x29226a3ca7415a54,
+                        ]),
+                    },
+                    y: Fp2 {
+                        c0: Fp::from_words([
+                            0xfaf347cfb7b68715,
+                            0xa2cb364c443981d0,
+                            0x11effe86af369c11,
+                            0x290bf12841dd2762,
+                        ]),
+                        c1: Fp::from_words([
+                            0x34e57f3096f7047d,
+                            0xafe0ef8221918d55,
+                            0x52597ac564966560,
+                            0x2e7c8a61fe367358,
+                        ]),
+                    },
                     infinity: Choice::from(0u8),
                 },
             },
             TestVector {
-                msg: b"abc",
+                msg: b"",
                 p: G2Affine {
-                    x: Fp2::ZERO,
-                    y: Fp2::ONE,
+                    x: Fp2 {
+                        c0: Fp::from_words([
+                            0x7fd75cffed6e994d,
+                            0xe6cadf0135ebedd9,
+                            0x97a99e234e91d4b9,
+                            0x04e9ea7f58071983,
+                        ]),
+                        c1: Fp::from_words([
+                            0xed0e07074b440a7b,
+                            0xf4b734e678494bf4,
+                            0x92fb30222ba96b63,
+                            0x070077acfda84433,
+                        ]),
+                    },
+                    y: Fp2 {
+                        c0: Fp::from_words([
+                            0xcbc8531e269227f9,
+                            0xd5f60fee5690b4f8,
+                            0xe2d48774d02393c8,
+                            0x2d3653bf41ec170c,
+                        ]),
+                        c1: Fp::from_words([
+                            0x8199a95ce02242b4,
+                            0x49bf91dc2a7d9ba5,
+                            0xd163570209e5f8f7,
+                            0x0a7cf5d0d356f0c4,
+                        ]),
+                    },
                     infinity: Choice::from(0u8),
                 },
             },
             TestVector {
                 msg: b"abcdef0123456789",
                 p: G2Affine {
-                    x: Fp2::ZERO,
-                    y: Fp2::ONE,
+                    x: Fp2 {
+                        c0: Fp::from_words([
+                            0x5cfef247c6e1e8a6,
+                            0x63a05c9a5c7a2886,
+                            0x27bf828e63fe2a1f,
+                            0x0fcda542dd52f0e5,
+                        ]),
+                        c1: Fp::from_words([
+                            0x0c7ddc364ae55a3a,
+                            0xb5f96b6dcad56b3a,
+                            0x106af8285fae5be0,
+                            0x2d0bb492bb59847c,
+                        ]),
+                    },
+                    y: Fp2 {
+                        c0: Fp::from_words([
+                            0x2614533311071780,
+                            0xaf1b73c1643bbd02,
+                            0xa230e7cb82fbd522,
+                            0x172d50b483e9bb9a,
+                        ]),
+                        c1: Fp::from_words([
+                            0xb798e9f1927a47b9,
+                            0xe07fd4d0b13a9519,
+                            0x9d6ab4c3014e73f7,
+                            0xafb68b6e28f44f4,
+                        ]),
+                    },
                     infinity: Choice::from(0u8),
                 },
             },
             TestVector {
                 msg: b"q128_qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
                 p: G2Affine {
-                    x: Fp2::ZERO,
-                    y: Fp2::ONE,
+                    x: Fp2 {
+                        c0: Fp::from_words([
+                            0x3493bcc2a946b38d,
+                            0x4ddf21691ab6418a,
+                            0x07014cab4752d824,
+                            0x1d050758368c65df,
+                        ]),
+                        c1: Fp::from_words([
+                            0xc293c7e40c27387f,
+                            0x890a4295dc17d053,
+                            0x9cdc7cfe0b9d247a,
+                            0x2596aa6bcb29439a,
+                        ]),
+                    },
+                    y: Fp2 {
+                        c0: Fp::from_words([
+                            0xa78b76841aca8e82,
+                            0xe1a00d0ba307d8fd,
+                            0xd0d81c93c3f470c1,
+                            0x2f84eec5eaa87952,
+                        ]),
+                        c1: Fp::from_words([
+                            0x54ebd5f69c5c3443,
+                            0xb15042dea92304fc,
+                            0xc6f076e9fdae2f9e,
+                            0x27aef639d6eb4157,
+                        ]),
+                    },
                     infinity: Choice::from(0u8),
                 },
             },
             TestVector {
                 msg: b"a512_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 p: G2Affine {
-                    x: Fp2::ZERO,
-                    y: Fp2::ONE,
+                    x: Fp2 {
+                        c0: Fp::from_words([
+                            0xd18153a9ec3854a7,
+                            0x3a4e6be06ea712b0,
+                            0x13bc742960afa905,
+                            0x13729abbd4fbe2a,
+                        ]),
+                        c1: Fp::from_words([
+                            0x4d90ac60437819a9,
+                            0xe8a663b27cfb6d79,
+                            0x4599465bb52880e8,
+                            0x261e8ebaff343806,
+                        ]),
+                    },
+                    y: Fp2 {
+                        c0: Fp::from_words([
+                            0x56fb890d1f7ba16e,
+                            0xe574155ebaece328,
+                            0x4da2d145390a6328,
+                            0x132285a30dc36cc1,
+                        ]),
+                        c1: Fp::from_words([
+                            0xb17885f71a394986,
+                            0x168329a113d358c3,
+                            0x4d17695042dcbaf0,
+                            0x6bd9197b3c0c1cc,
+                        ]),
+                    },
                     infinity: Choice::from(0u8),
                 },
             },
         ];
 
         for vector in &encode_vectors {
-            // let u = Fp2::encode::<ExpandMsgXmd<sha2::Sha256>>(vector.msg, DST_ENCODE);
-            // assert_eq!(u, Fp2::from_be_hex(vector.u));
-            // let p: G2Projective = u.map_to_curve();
-            // let q = p;
-            // assert_eq!(p.x, Fp::from_be_hex(vector.p_x));
-            // assert_eq!(p.y, Fp::from_be_hex(vector.p_y));
-            // assert_eq!(q.x, Fp::from_be_hex(vector.q_x));
-            // assert_eq!(q.y, Fp::from_be_hex(vector.q_y));
-            //
-            // assert!(!bool::from(q.is_identity()));
-            // assert!(bool::from(p.is_on_curve()));
-            // assert!(bool::from(q.is_torsion_free()));
+            let p = G2Affine::from(G2Projective::encode::<ExpandMsgXmd<sha2::Sha256>>(
+                vector.msg, DST_ENCODE,
+            ));
+            assert_eq!(p, vector.p);
         }
     }
 

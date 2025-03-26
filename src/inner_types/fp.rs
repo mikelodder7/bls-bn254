@@ -464,4 +464,8 @@ impl Fp {
     pub const fn from_montgomery(words: [u64; 4]) -> Self {
         Self(FpResidue::from_montgomery(U256::from_words(words)).retrieve())
     }
+
+    pub const fn from_words(words: [u64; 4]) -> Self {
+        Self(U256::from_words(words))
+    }
 }
