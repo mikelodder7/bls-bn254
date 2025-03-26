@@ -110,7 +110,7 @@ impl From<&G1Projective> for G1Affine {
         let tmp = G1Affine {
             x,
             y,
-            infinity: Choice::from(0),
+            infinity: Choice::from(0u8),
         };
 
         G1Affine::conditional_select(&tmp, &G1Affine::identity(), zinv.is_zero())
@@ -248,7 +248,7 @@ impl G1Affine {
         Self {
             x: Fp::ZERO,
             y: Fp::ONE,
-            infinity: Choice::from(1),
+            infinity: Choice::from(1u8),
         }
     }
 
@@ -257,7 +257,7 @@ impl G1Affine {
         Self {
             x: Fp::ONE,
             y: Fp::TWO,
-            infinity: Choice::from(0),
+            infinity: Choice::from(0u8),
         }
     }
 
@@ -1120,5 +1120,13 @@ mod tests {
             assert!(bool::from(p.is_on_curve()));
             assert!(bool::from(p.is_torsion_free()));
         }
+    }
+
+    #[test]
+    fn arithmetic() {
+        assert_eq!(
+            G1Projective::GENERATOR.double().double() + G1Projective::GENERATOR,
+            G1Projective::GENERATOR * Scalar::from(5u8),
+        );
     }
 }

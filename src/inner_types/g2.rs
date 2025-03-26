@@ -1,12 +1,13 @@
-use super::{Fp2, G1Affine};
+use super::{Fp2, FqModulus, G1Affine};
 use crate::inner_types::{fp::Fp, scalar::Scalar};
 use crate::Bn254Error;
-use core::borrow::Borrow;
-use core::iter::Sum;
 use core::{
+    borrow::Borrow,
     fmt::{self, Display, Formatter},
+    iter::Sum,
     ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
+use crypto_bigint::{modular::constant_mod::ResidueParams, Encoding};
 use elliptic_curve::{
     consts::{U128, U64},
     generic_array::GenericArray,
@@ -245,22 +246,8 @@ impl G2Affine {
     /// Returns the generator of the group.
     pub fn generator() -> Self {
         Self {
-            x: Fp2 {
-                c0: Fp::from_be_hex(
-                    "1800deef121f1e7645fb98b23b47b6672f5e9c77e3b6d2c0c6a47013149d46c2",
-                ),
-                c1: Fp::from_be_hex(
-                    "198e9393920d483a7260bfb731fb5db6466f6dcb02d4981f3e185a6f1b1cae1b",
-                ),
-            },
-            y: Fp2 {
-                c0: Fp::from_be_hex(
-                    "12c85ea5db8c6deb43b4a02d921b03d73092fa8315dbb3a6db69a58a3d41e4a1",
-                ),
-                c1: Fp::from_be_hex(
-                    "090689d0585ff0756b1e3e034293a225187f7e0caa96c1f54dbd8c7f4a26c4bd",
-                ),
-            },
+            x: Fp2::GEN_X,
+            y: Fp2::GEN_Y,
             infinity: Choice::from(0),
         }
     }
@@ -397,13 +384,15 @@ impl G2Affine {
 
     /// Returns whether this point is free of an h-torsion component
     pub fn is_torsion_free(&self) -> Choice {
-        self.is_on_curve()
+        G2Projective::from(self).is_torsion_free()
     }
 
     /// Returns whether this point is on the curve.
     pub fn is_on_curve(&self) -> Choice {
         // Y^2 - X^3 = 4(u+1)
-        (self.y.square() - (self.x.square() * self.x)).ct_eq(&Fp2::B) | self.infinity
+        let lhs = self.y.square();
+        let rhs = (self.x.square() * self.x) + Fp2::B;
+        lhs.ct_eq(&rhs) | self.infinity
     }
 }
 
@@ -676,9 +665,9 @@ impl CofactorGroup for G2Projective {
     type Subgroup = G2Projective;
 
     fn clear_cofactor(&self) -> Self::Subgroup {
-        let x_gen = Scalar::from(4965661367192848881u64);
+        const X_GEN: Scalar = Scalar::from_u64(X);
         let mut points = [G2Projective::IDENTITY; 4];
-        points[0] = self * x_gen;
+        points[0] = self * X_GEN;
         points[1] = (points[0].double() + points[0]).psi();
         points[2] = points[0].psi().psi();
         points[3] = self.psi().psi().psi();
@@ -694,6 +683,7 @@ impl CofactorGroup for G2Projective {
     }
 }
 
+const X: u64 = 0x44e992b44a6909f1;
 impl G2Projective {
     /// Bytes to represent the compressed form of the point.
     pub const COMPRESSED_BYTES: usize = 64;
@@ -710,14 +700,8 @@ impl G2Projective {
 
     /// Returns the generator of the group
     pub const GENERATOR: Self = Self {
-        x: Fp2 {
-            c0: Fp::from_be_hex("1800deef121f1e7645fb98b23b47b6672f5e9c77e3b6d2c0c6a47013149d46c2"),
-            c1: Fp::from_be_hex("198e9393920d483a7260bfb731fb5db6466f6dcb02d4981f3e185a6f1b1cae1b"),
-        },
-        y: Fp2 {
-            c0: Fp::from_be_hex("12c85ea5db8c6deb43b4a02d921b03d73092fa8315dbb3a6db69a58a3d41e4a1"),
-            c1: Fp::from_be_hex("090689d0585ff0756b1e3e034293a225187f7e0caa96c1f54dbd8c7f4a26c4bd"),
-        },
+        x: Fp2::GEN_X,
+        y: Fp2::GEN_Y,
         z: Fp2::ONE,
     };
 
@@ -730,7 +714,8 @@ impl G2Projective {
     /// exists within the q-order subgroup. This should always return true
     /// unless an "unchecked" API was used.
     pub fn is_torsion_free(&self) -> Choice {
-        self.is_on_curve()
+        self.multiply(&FqModulus::MODULUS.to_le_bytes())
+            .is_identity()
     }
 
     /// Returns true if this point is on the curve. This should always return
@@ -861,7 +846,7 @@ impl G2Projective {
     }
 
     /// Multiplies this point by a scalar.
-    pub(crate) fn multiply(&self, by: &[u8; 32]) -> G2Projective {
+    pub(crate) fn multiply(&self, by: &[u8]) -> G2Projective {
         let mut acc = G2Projective::IDENTITY;
 
         // This is a simple double-and-add implementation of point
@@ -877,7 +862,7 @@ impl G2Projective {
             .skip(1)
         {
             acc = acc.double();
-            acc = G2Projective::conditional_select(&acc, &(acc + self), bit);
+            acc.conditional_assign(&(acc + self), bit);
         }
 
         acc
@@ -955,6 +940,7 @@ impl G2Projective {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::inner_types::G1Projective;
     use elliptic_curve::hash2curve::MapToCurve;
 
     #[cfg(any(feature = "alloc", feature = "std"))]
@@ -982,23 +968,55 @@ mod tests {
         let x: [u8; G2Affine::COMPRESSED_BYTES] = g.x().into();
         let y = g.y_is_odd();
         let mut expected_x = [0u8; G2Affine::COMPRESSED_BYTES];
-        expected_x[0] = 1;
+        hex::decode_to_slice("198e9393920d483a7260bfb731fb5db6466f6dcb02d4981f3e185a6f1b1cae1b1800deef121f1e7645fb98b23b47b6672f5e9c77e3b6d2c0c6a47013149d46c2", &mut expected_x).unwrap();
 
         assert_eq!(x, expected_x);
-        assert_eq!(y.unwrap_u8(), 0);
+        assert_eq!(y.unwrap_u8(), 1);
     }
 
     #[test]
     fn affine_is_tests() {
+        let bad = G2Projective {
+            x: Fp2 {
+                c0: Fp::from_be_hex(
+                    "1800deef121f1e7645fb98b23b47b6672f5e9c77e3b6d2c0c6a47013149d46c2",
+                ),
+                c1: Fp::from_be_hex(
+                    "198e9393920d483a7260bfb731fb5db6466f6dcb02d4981f3e185a6f1b1cae1b",
+                ),
+            },
+            y: Fp2 {
+                c0: Fp::from_be_hex(
+                    "12c85ea5db8c6deb43b4a02d921b03d73092fa8315dbb3a6db69a58a3d41e4a1",
+                ),
+                c1: Fp::from_be_hex(
+                    "090689d0585ff0756b1e3e034293a225187f7e0caa96c1f54dbd8c7f4a26c4bd",
+                ),
+            },
+            z: Fp2::ONE,
+        };
+
+        assert_eq!(bad.is_identity().unwrap_u8(), 0);
+        assert_eq!(bad.is_torsion_free().unwrap_u8(), 0);
+        assert_eq!(bad.is_on_curve().unwrap_u8(), 0);
+
         let g = G2Affine::generator();
         assert_eq!(g.is_identity().unwrap_u8(), 0);
-        assert_eq!(g.is_torsion_free().unwrap_u8(), 1);
         assert_eq!(g.is_on_curve().unwrap_u8(), 1);
+        assert_eq!(g.is_torsion_free().unwrap_u8(), 1);
 
         let g = G2Affine::identity();
         assert_eq!(g.is_identity().unwrap_u8(), 1);
         assert_eq!(g.is_torsion_free().unwrap_u8(), 1);
         assert_eq!(g.is_on_curve().unwrap_u8(), 1);
+    }
+
+    #[test]
+    fn arithmetic() {
+        assert_eq!(
+            G2Projective::GENERATOR.double().double() + G2Projective::GENERATOR,
+            G2Projective::GENERATOR * Scalar::from(5u8),
+        );
     }
 
     #[test]

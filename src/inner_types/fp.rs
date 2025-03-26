@@ -255,7 +255,7 @@ impl PrimeField for Fp {
 
     fn to_repr(&self) -> Self::Repr {
         let mut bytes = [0u8; 32];
-        bytes.copy_from_slice(&self.0.to_le_bytes()[..]);
+        bytes.copy_from_slice(&self.0.to_be_bytes()[..]);
         bytes
     }
 
@@ -373,6 +373,13 @@ impl MapToCurve for Fp {
 impl Fp {
     /// The size of the field in bytes
     pub const BYTES: usize = 32;
+    pub const B: Self = Self::from_montgomery([
+        0x7a17caa950ad28d7,
+        0x1f6ac17ae15521b9,
+        0x334bea4e696bd284,
+        0x2a1f6744ce179d8e,
+    ]);
+
     /// Two
     pub const TWO: Self = Self(U256::from_u8(2));
     /// The value of B
@@ -452,5 +459,9 @@ impl Fp {
 
     pub const fn from_be_hex(hex: &str) -> Self {
         Self(U256::from_be_hex(hex))
+    }
+
+    pub const fn from_montgomery(words: [u64; 4]) -> Self {
+        Self(FpResidue::from_montgomery(U256::from_words(words)).retrieve())
     }
 }

@@ -3,7 +3,6 @@ use crate::inner_types::{
     G2Projective,
 };
 
-use crate::inner_types::fp::FpResidue;
 use core::{
     borrow::Borrow,
     fmt::{self, Display, Formatter},
@@ -300,21 +299,49 @@ impl Fp2 {
         c1: Fp::ZERO,
     };
 
+    pub const GEN_X: Self = Self {
+        c0: Fp::from_montgomery([
+            0x8e83b5d102bc2026,
+            0xdceb1935497b0172,
+            0xfbb8264797811adf,
+            0x19573841af96503b,
+        ]),
+        c1: Fp::from_montgomery([
+            0xafb4737da84c6140,
+            0x6043dd5a5802d8c4,
+            0x09e950fc52a02f86,
+            0x14fef0833aea7b6b,
+        ]),
+    };
+
+    pub const GEN_Y: Self = Self {
+        c0: Fp::from_montgomery([
+            0x619dfa9d886be9f6,
+            0xfe7fd297f59e9b78,
+            0xff9e1a62231b7dfe,
+            0x28fd7eebae9e4206,
+        ]),
+        c1: Fp::from_montgomery([
+            0x64095b56c71856ee,
+            0xdc57f922327d3cbb,
+            0x55f935be33351076,
+            0x0da4a0e693fd6482,
+        ]),
+    };
+
     pub const B: Self = Self {
-        c0: Fp(FpResidue::from_montgomery(U256::from_words([
+        c0: Fp::from_montgomery([
             0x3bf938e377b802a8,
             0x020b1b273633535d,
             0x26b7edf049755260,
             0x2514c6324384a86d,
-        ]))
-        .retrieve()),
-        c1: Fp(FpResidue::from_montgomery(U256::from_words([
+        ]),
+        c1: Fp::from_montgomery([
             0x38e7ecccd1dcff67,
             0x65f0b37d93ce0d3e,
             0xd749d0dd22ac00aa,
             0x0141b9ce4a688d4d,
-        ]))
-        .retrieve()),
+        ]),
     };
 
     pub const B3: Self = Self::B.double().addition(&Self::B);
@@ -397,13 +424,6 @@ impl Fp2 {
 
     pub const fn frobenius_map(&self) -> Self {
         self.conjugate()
-    }
-
-    pub const fn mul_by_nonresidue(&self) -> Self {
-        Self {
-            c0: self.c0.subtract(&self.c1),
-            c1: self.c0.addition(&self.c1),
-        }
     }
 
     /// Returns true whenever `self` is a square in the field

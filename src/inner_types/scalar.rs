@@ -491,6 +491,27 @@ impl AsRef<Scalar> for Scalar {
 impl Scalar {
     pub const BYTES: usize = 32;
 
+    pub const fn from_u8(value: u8) -> Self {
+        Self(U256::from_u8(value))
+    }
+
+    pub const fn from_u16(value: u16) -> Self {
+        Self(U256::from_u16(value))
+    }
+
+    pub const fn from_u32(value: u32) -> Self {
+        Self(U256::from_u32(value))
+    }
+
+    pub const fn from_u64(value: u64) -> Self {
+        Self(U256::from_u64(value))
+    }
+
+    #[cfg(target_pointer_width = "64")]
+    pub const fn from_u128(value: u128) -> Self {
+        Self(U256::from_u128(value))
+    }
+
     pub fn is_zero(&self) -> Choice {
         self.0.is_zero()
     }
