@@ -21,18 +21,12 @@ use subtle::{Choice, ConditionallyNegatable, ConditionallySelectable, ConstantTi
 use zeroize::DefaultIsZeroes;
 
 /// A point in the multiplicative group of order p^2
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub(crate) struct Fp2 {
     /// The `a` portion
     pub c0: Fp,
     /// The `b` portion
     pub c1: Fp,
-}
-
-impl Default for Fp2 {
-    fn default() -> Self {
-        Self::ZERO
-    }
 }
 
 impl DefaultIsZeroes for Fp2 {}
@@ -292,6 +286,15 @@ impl MapToCurve for Fp2 {
     }
 }
 
+impl From<Fp> for Fp2 {
+    fn from(f: Fp) -> Self {
+        Self {
+            c0: f,
+            c1: Fp::ZERO,
+        }
+    }
+}
+
 impl Fp2 {
     /// The multiplicative identity element
     pub const ONE: Self = Self {
@@ -407,6 +410,13 @@ impl Fp2 {
 
     pub const fn mul_by_3b(&self) -> Self {
         self.multiply(&Self::B3)
+    }
+
+    pub const fn mul_by_nonresidue(&self) -> Self {
+        Self {
+            c0: self.c0.subtract(&self.c1),
+            c1: self.c0.addition(&self.c1),
+        }
     }
 
     /// True if this element is the additive identity

@@ -1,9 +1,12 @@
 #[macro_use]
 mod macros;
 mod fp;
+mod fp12;
 mod fp2;
+mod fp6;
 mod g1;
 mod g2;
+mod pairings;
 mod scalar;
 
 pub use g1::*;
@@ -11,15 +14,18 @@ pub use g2::*;
 pub use scalar::*;
 
 use fp::*;
+use fp12::*;
 use fp2::*;
+use fp6::*;
 
-use elliptic_curve::bigint::Encoding;
 use elliptic_curve::{
-    bigint::{modular::constant_mod::ResidueParams, U256},
+    bigint::{modular::constant_mod::ResidueParams, Encoding, U256},
     consts::{U32, U64},
     point::PointCompression,
     Curve, CurveArithmetic, FieldBytes, FieldBytesEncoding, PrimeCurve,
 };
+
+pub(crate) const X: u64 = 0x44e992b44a6909f1;
 
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Bn254G1;

@@ -6,6 +6,7 @@ pub enum Bn254Error {
     InvalidScalarBytes,
     InvalidG1Bytes,
     InvalidG2Bytes,
+    InvalidGtBytes,
 }
 
 impl Display for Bn254Error {
@@ -14,6 +15,7 @@ impl Display for Bn254Error {
             Bn254Error::InvalidScalarBytes => write!(f, "Invalid scalar bytes"),
             Bn254Error::InvalidG1Bytes => write!(f, "Invalid G1 bytes"),
             Bn254Error::InvalidG2Bytes => write!(f, "Invalid G2 bytes"),
+            Bn254Error::InvalidGtBytes => write!(f, "Invalid GT bytes"),
         }
     }
 }

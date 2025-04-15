@@ -236,6 +236,24 @@ impl GroupEncoding for G1Affine {
     }
 }
 
+impl UncompressedEncoding for G1Affine {
+    type Uncompressed = G1UncompressedRepr;
+
+    fn from_uncompressed(bytes: &Self::Uncompressed) -> CtOption<Self> {
+        let bytes = (*bytes).into();
+        G1Affine::from_uncompressed(&bytes)
+    }
+
+    fn from_uncompressed_unchecked(bytes: &Self::Uncompressed) -> CtOption<Self> {
+        let bytes = (*bytes).into();
+        G1Affine::from_uncompressed(&bytes)
+    }
+
+    fn to_uncompressed(&self) -> Self::Uncompressed {
+        self.to_uncompressed().into()
+    }
+}
+
 impl G1Affine {
     /// Bytes to represent the compressed form of the point.
     pub const COMPRESSED_BYTES: usize = 32;

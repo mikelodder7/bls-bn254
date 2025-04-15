@@ -1,4 +1,4 @@
-use super::{Fp2, FqModulus, G1Affine};
+use super::*;
 use crate::inner_types::{fp::Fp, scalar::Scalar};
 use crate::Bn254Error;
 use core::{
@@ -225,6 +225,24 @@ impl GroupEncoding for G2Affine {
 
     fn to_bytes(&self) -> Self::Repr {
         GenericArray::clone_from_slice(&self.to_compressed())
+    }
+}
+
+impl UncompressedEncoding for G2Affine {
+    type Uncompressed = G2UncompressedRepr;
+
+    fn from_uncompressed(bytes: &Self::Uncompressed) -> CtOption<Self> {
+        let bytes = (*bytes).into();
+        Self::from_uncompressed(&bytes)
+    }
+
+    fn from_uncompressed_unchecked(bytes: &Self::Uncompressed) -> CtOption<Self> {
+        let bytes = (*bytes).into();
+        Self::from_uncompressed(&bytes)
+    }
+
+    fn to_uncompressed(&self) -> Self::Uncompressed {
+        self.to_uncompressed().into()
     }
 }
 
@@ -683,7 +701,6 @@ impl CofactorGroup for G2Projective {
     }
 }
 
-const X: u64 = 0x44e992b44a6909f1;
 impl G2Projective {
     /// Bytes to represent the compressed form of the point.
     pub const COMPRESSED_BYTES: usize = 64;
